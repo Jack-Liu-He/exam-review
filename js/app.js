@@ -38,8 +38,6 @@
   };
 
   const els = {};
-  const safeTags = new Set(["SUB", "SUP", "BR", "B", "STRONG", "I", "EM", "U"]);
-
   document.addEventListener("DOMContentLoaded", init);
 
   function init() {
@@ -489,26 +487,25 @@
   }
 
   function setSafeHtml(element, html) {
-    element.innerHTML = "";
-    const template = document.createElement("template");
-    template.innerHTML = String(html ?? "").replace(/\n/g, "<br>");
-    element.appendChild(cleanNode(template.content));
+    const placeholders = [];
+    const source = String(html ?? "").replace(/<\/?(sub|sup|br|b|strong|i|em|u)>/gi, (tag) => {
+      const token = `__SAFE_TAG_${placeholders.length}__`;
+      placeholders.push(normalizeAllowedTag(tag));
+      return token;
+    });
+    let escaped = escapeHtml(source).replace(/\n/g, "<br>");
+    placeholders.forEach((tag, index) => {
+      escaped = escaped.replace(`__SAFE_TAG_${index}__`, tag);
+    });
+    element.innerHTML = escaped;
   }
 
-  function cleanNode(node) {
-    const fragment = document.createDocumentFragment();
-    node.childNodes.forEach((child) => {
-      if (child.nodeType === Node.TEXT_NODE) {
-        fragment.appendChild(document.createTextNode(child.textContent));
-      } else if (child.nodeType === Node.ELEMENT_NODE && safeTags.has(child.tagName)) {
-        const copy = document.createElement(child.tagName.toLowerCase());
-        copy.appendChild(cleanNode(child));
-        fragment.appendChild(copy);
-      } else if (child.nodeType === Node.ELEMENT_NODE) {
-        fragment.appendChild(cleanNode(child));
-      }
-    });
-    return fragment;
+  function normalizeAllowedTag(tag) {
+    const match = tag.match(/^<(\/?)(sub|sup|br|b|strong|i|em|u)>$/i);
+    if (!match) return "";
+    const slash = match[1];
+    const name = match[2].toLowerCase();
+    return name === "br" ? "<br>" : `<${slash}${name}>`;
   }
 
   function escapeHtml(value) {
