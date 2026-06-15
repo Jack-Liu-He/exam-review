@@ -322,6 +322,10 @@
     if (correct) {
       store.wrong.delete(question.id);
       persistSet(STORAGE_KEYS.wrong, store.wrong);
+      if (canAdvanceAfterCorrect()) {
+        move(1);
+        return;
+      }
     } else {
       store.wrong.add(question.id);
       persistSet(STORAGE_KEYS.wrong, store.wrong);
@@ -329,6 +333,12 @@
     render();
     els.feedback.className = `feedback ${correct ? "correct" : "wrong"}`;
     els.feedback.textContent = correct ? "回答正确" : `回答错误，正确答案是：${plainAnswer(question.answer)}`;
+  }
+
+  function canAdvanceAfterCorrect() {
+    const scope = getPracticeScope();
+    if (state.mode === "random") return scope.some((q) => !store.completed.has(q.id));
+    return state.index < scope.length - 1;
   }
 
   function showAnswerAndMaybeComplete() {
