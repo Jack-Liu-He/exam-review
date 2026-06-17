@@ -10,16 +10,19 @@
     essay: "大题"
   };
 
+  const QUESTION_BANK_ID = "renewable_heat_power";
+
   const STORAGE_KEYS = {
-    wrong: "wrongQuestionIds",
-    favorite: "favoriteQuestionIds",
-    completed: "completedQuestionIds",
-    theme: "reviewTheme"
+    wrong: `examReview_wrong_${QUESTION_BANK_ID}`,
+    favorite: `examReview_favorites_${QUESTION_BANK_ID}`,
+    completed: `examReview_completed_${QUESTION_BANK_ID}`,
+    mode: `examReview_orderMode_${QUESTION_BANK_ID}`,
+    theme: "examReview_theme"
   };
 
   const state = {
     type: "all",
-    mode: "order",
+    mode: readMode(),
     search: "",
     unfinishedOnly: false,
     memorizeMode: false,
@@ -48,7 +51,7 @@
     }
 
     bindElements();
-    applyTheme(localStorage.getItem(STORAGE_KEYS.theme) || "light");
+    applyTheme(localStorage.getItem(STORAGE_KEYS.theme) || localStorage.getItem("reviewTheme") || "light");
     bindEvents();
     render();
   }
@@ -126,6 +129,7 @@
 
   function setMode(mode) {
     state.mode = mode;
+    localStorage.setItem(STORAGE_KEYS.mode, mode);
     resetPosition();
     render();
   }
@@ -419,7 +423,7 @@
     const correct = normalizeText(String(answer || ""));
     if (user === correct) return true;
     const answerParts = String(answer || "")
-      .replace(/第[一二三四五六七八九十]+空[:：]/g, "")
+      .replace(/第[0-9一二三四五六七八九十]+空[:：]/g, "")
       .split(/[;；,，、\n]/)
       .map(normalizeText)
       .filter(Boolean);
@@ -485,6 +489,11 @@
     } catch {
       return new Set();
     }
+  }
+
+  function readMode() {
+    const mode = localStorage.getItem(STORAGE_KEYS.mode);
+    return mode === "random" ? "random" : "order";
   }
 
   function persistSet(key, set) {
