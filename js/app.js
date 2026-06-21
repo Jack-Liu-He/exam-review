@@ -408,8 +408,7 @@
     }
     if (question.type === "multiple") {
       const selected = [...state.selected].map(normalizeChoice).sort().join("");
-      const answer = Array.isArray(question.answer) ? question.answer : String(question.answer).split("");
-      return selected === answer.map(normalizeChoice).sort().join("");
+      return selected === multipleAnswerKeys(question.answer).map(normalizeChoice).sort().join("");
     }
     if (question.type === "blank") {
       const input = document.getElementById("blankAnswer")?.value || "";
@@ -454,7 +453,21 @@
   }
 
   function normalizeChoice(value) {
-    return String(value || "").replace(/[正确对是√✓]/g, "√").replace(/[错误错否×xX]/g, "×").trim().toUpperCase();
+    return String(value || "")
+      .replace(/[Ａ-Ｚａ-ｚ]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 65248))
+      .replace(/[正确对是√✓]/g, "√")
+      .replace(/[错误错否×xX]/g, "×")
+      .trim()
+      .toUpperCase();
+  }
+
+  function multipleAnswerKeys(answer) {
+    if (Array.isArray(answer)) return answer;
+    const value = String(answer || "").trim();
+    const compact = value.replace(/[Ａ-Ｚａ-ｚ]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 65248));
+    const leading = compact.match(/^[A-H]+(?=[\s（(、,，;；]|$)/i);
+    if (leading) return leading[0].split("");
+    return [...compact.matchAll(/[A-H](?=[、,，.．\s]|$)/gi)].map((match) => match[0]);
   }
 
   function normalizeText(value) {
